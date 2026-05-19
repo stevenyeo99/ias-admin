@@ -19,6 +19,22 @@ function IconButton({ icon: Icon, label }) {
   );
 }
 
+function getStatusTone(status) {
+  if (status === 'failed') {
+    return 'red';
+  }
+
+  if (status === 'running' || status === 'queued') {
+    return 'yellow';
+  }
+
+  if (status === 'completed' || status === 'connected') {
+    return 'green';
+  }
+
+  return 'gray';
+}
+
 export default function LiveWebPageViewer({ state }) {
   return (
     <Card className="overflow-hidden">
@@ -27,11 +43,15 @@ export default function LiveWebPageViewer({ state }) {
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-slate-800">Browser Status:</span>
-            <StatusPill tone="green" className="h-7 px-3 text-xs">{state.browserStatus}</StatusPill>
+            <StatusPill tone={getStatusTone(state.status || state.browserStatus)} className="h-7 px-3 text-xs">
+              {state.browserStatus}
+            </StatusPill>
           </div>
           <div className="flex items-center gap-2 lg:ml-10">
             <span className="text-slate-800">Current Step:</span>
-            <StatusPill tone="blue" className="h-7 px-3 text-xs">{state.currentStep}</StatusPill>
+            <StatusPill tone={state.status === 'failed' ? 'red' : 'blue'} className="h-7 px-3 text-xs">
+              {state.currentStep}
+            </StatusPill>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -54,7 +74,14 @@ export default function LiveWebPageViewer({ state }) {
           </div>
         </div>
 
-        <div className="flex min-h-[360px] items-center justify-center rounded-md border bg-slate-50 px-6 py-12 lg:min-h-[470px]">
+        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-md border bg-slate-50 px-6 py-12 lg:min-h-[470px]">
+          {state.latestScreenshot ? (
+            <img
+              src={state.latestScreenshot}
+              alt="Latest automation screenshot"
+              className="max-h-[560px] w-full rounded-md border bg-white object-contain shadow-sm"
+            />
+          ) : (
           <div className="max-w-md text-center">
             <div className="mx-auto mb-6 flex h-24 w-32 flex-col rounded-md border-2 border-blue-600 bg-white text-blue-600 shadow-sm">
               <div className="flex h-4 items-center gap-1 border-b-2 border-blue-600 px-2">
@@ -74,6 +101,7 @@ export default function LiveWebPageViewer({ state }) {
               This area will display the real-time view of the internal IAS system once connected.
             </p>
           </div>
+          )}
         </div>
       </CardContent>
     </Card>

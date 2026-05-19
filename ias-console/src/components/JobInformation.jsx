@@ -8,7 +8,16 @@ import { cn } from '@/lib/utils';
 const toneClasses = {
   blue: 'bg-blue-50 text-blue-600',
   green: 'bg-emerald-50 text-emerald-600',
+  red: 'bg-red-50 text-red-600',
+  yellow: 'bg-amber-50 text-amber-600',
   teal: 'bg-teal-50 text-teal-600'
+};
+
+const badgeClasses = {
+  green: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50',
+  red: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-50',
+  yellow: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50',
+  blue: 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50'
 };
 
 export default function JobInformation({ items }) {
@@ -28,7 +37,7 @@ export default function JobInformation({ items }) {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">{item.label}</p>
                   {item.badge ? (
-                    <Badge className="mt-3 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
+                    <Badge className={cn('mt-3', badgeClasses[item.tone] || badgeClasses.blue)}>
                       {item.value}
                     </Badge>
                   ) : (

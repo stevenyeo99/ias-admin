@@ -302,7 +302,7 @@ Acceptance:
 
 ### Phase 3: Console Integration
 
-Status: Not started.
+Status: Complete.
 
 Goal: connect the existing console UI to backend jobs.
 
