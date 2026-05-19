@@ -2,61 +2,82 @@
 
 ## Project Overview
 
-This project is an insurance automation demo.
+This project is an internal insurance automation prototype.
 
 Goal:
-- Login to IAS UAT
-- Retrieve policy/member data
-- Generate CSV for InsureNet
+- Provide a UI console for automation workflows
+- Display live internal web system viewer
+- Show automation logs and extracted data
+- Generate CSV for downstream systems
 
-Architecture:
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Browser automation: Playwright
-- CSV generation on backend
+Current phase:
+Frontend UI prototype only.
 
-## Rules
+## Tech Stack
 
-- Never hardcode credentials
-- Use environment variables
-- Use service layer architecture
-- Keep Playwright logic isolated under /backend/src/automation
-- Use async/await consistently
-- Use TypeScript if possible
-- Keep UI simple and enterprise-style
+Frontend:
+- React + Vite
+- JavaScript only
+
+Backend:
+- Node.js + Express
+- Express generator style
+- /bin/www startup structure
+
+## Implementation Rules
+
+- Use modular component structure
+- Keep components reusable
+- Keep layout clean and enterprise-style
+- Prefer simple architecture over overengineering
+- Use mock/static data for current phase
+- Keep code readable and maintainable
 
 ## Frontend Rules
 
-- React functional components only
-- Use hooks
-- Avoid large components
-- Use API service abstraction
-- Console/dashboard appearance preferred
+- Use React functional components only
+- Use component-based architecture
+- Keep CSS clean and organized
+- Avoid large monolithic components
+- Use modern dashboard layout
+- White background with blue/green accents
 
 ## Backend Rules
 
-- Separate controller/service/util layers
-- Return structured JSON responses
-- Add logging for all automation steps
+- Use modular feature-based structure
+- Use modules/<feature>/ pattern
+- Use Express generator architecture
+- Keep routes/controllers/services separated
 
 ## Automation Rules
 
-- Use Playwright
-- Avoid fragile XPath selectors
-- Add screenshot on failure
-- Add retry for login
-- Store logs per job execution
+- Real browser automation is NOT implemented yet
+- Do not add Playwright login yet
+- Live web viewer is placeholder only
 
 ## CSV Rules
 
-- CSV generation must be configurable
-- Use UTF-8
-- Keep mapping layer separate
+- CSV generation is placeholder only for now
+- Final CSV structure pending confirmation
 
-## Future AI Scope
+## Security Rules
 
-Future enhancement may include:
-- LLM intent parsing
-- OCR extraction
-- intelligent field mapping
-- AI-assisted workflow decisions
+- Never hardcode credentials
+- Never expose internal URLs in frontend
+- Use environment variables later
+
+## Do Not Implement Yet
+
+- Do not implement real IAS login
+- Do not implement Playwright automation
+- Do not implement backend API integration
+- Do not implement authentication
+- Do not implement database persistence
+- Do not implement real CSV generation logic
+
+## Preferred Work Style
+
+- Build UI mockup first
+- Use clean enterprise dashboard styling
+- Prioritize visual clarity for demo purposes
+- Keep implementation simple and modular
