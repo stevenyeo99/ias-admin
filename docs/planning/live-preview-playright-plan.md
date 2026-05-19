@@ -324,7 +324,7 @@ Acceptance:
 
 ### Phase 4: Live Preview Polish
 
-Status: Not started.
+Status: Complete.
 
 Goal: improve the viewer without implementing complex browser streaming.
 

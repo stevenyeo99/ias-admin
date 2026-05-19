@@ -24,8 +24,8 @@ export default function DashboardPage() {
   const [activeJobId, setActiveJobId] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState(null);
-  const { job } = useJobPolling(activeJobId);
-  const { logs } = useJobLogStream(activeJobId);
+  const { job, error: pollingError } = useJobPolling(activeJobId);
+  const { logs, connectionState, error: streamError } = useJobLogStream(activeJobId);
   const isRunning = job ? RUNNING_STATUSES.has(job.status) : false;
 
   async function handleStartAutomation(input) {
@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   const displayedLogs = useMemo(() => {
     if (logs.length === 0) {
-      return activityLogs;
+      return [];
     }
 
     return mapBackendLogs(logs);
@@ -59,9 +59,11 @@ export default function DashboardPage() {
       browserStatus: formatBrowserStatus(job.browserStatus),
       currentStep: job.currentStep || 'Waiting',
       status: job.status,
-      latestScreenshot: job.latestScreenshot ? `${API_BASE_URL}${job.latestScreenshot}` : null
+      latestScreenshot: job.latestScreenshot ? `${API_BASE_URL}${job.latestScreenshot}` : null,
+      safeError: getSafeJobError(job),
+      connectionState
     };
-  }, [job]);
+  }, [job, connectionState]);
 
   const displayedJobInfo = useMemo(() => {
     if (!job) {
@@ -81,7 +83,7 @@ export default function DashboardPage() {
             onStart={handleStartAutomation}
             isStarting={isStarting}
             isRunning={isRunning}
-            error={startError}
+            error={startError || pollingError?.message || streamError?.message}
           />
           <JobLogs logs={displayedLogs} />
           <ExtractedDataPreview rows={extractedData} />
@@ -110,7 +112,7 @@ function mapBackendLogs(logs) {
 
 function resolveLogState(log, isLast) {
   if (log.level === 'error') {
-    return 'active';
+    return 'failed';
   }
 
   if (log.status === 'completed') {
@@ -118,6 +120,36 @@ function resolveLogState(log, isLast) {
   }
 
   return isLast ? 'active' : 'done';
+}
+
+function getSafeJobError(job) {
+  if (!job?.error?.message) {
+    return null;
+  }
+
+  const message = job.error.message;
+
+  if (message.includes('Missing IAS automation configuration')) {
+    return 'IAS automation settings are incomplete on the backend.';
+  }
+
+  if (message.includes('Unable to locate field')) {
+    return 'The IAS login form fields could not be detected.';
+  }
+
+  if (message.includes('Login success indicator')) {
+    return 'IAS login was submitted, but success could not be confirmed.';
+  }
+
+  if (message.includes('net::')) {
+    return 'The IAS login page could not be reached from the automation browser.';
+  }
+
+  if (message.includes('Executable doesn')) {
+    return 'The Playwright browser runtime is not installed on the backend.';
+  }
+
+  return 'IAS login automation failed. Check backend logs for technical details.';
 }
 
 function getSafeErrorDetail(log) {

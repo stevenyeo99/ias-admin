@@ -1,10 +1,14 @@
 import {
+  AlertCircle,
   Camera,
+  CheckCircle2,
   Expand,
   Globe2,
+  Loader2,
   Monitor,
   RefreshCw
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import SectionTitle from '@/components/SectionTitle';
 import StatusPill from '@/components/StatusPill';
@@ -36,6 +40,13 @@ function getStatusTone(status) {
 }
 
 export default function LiveWebPageViewer({ state }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasScreenshot = state.latestScreenshot && !imageFailed;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [state.latestScreenshot]);
+
   return (
     <Card className="overflow-hidden">
       <SectionTitle icon={Monitor}>Live Web Page Viewer</SectionTitle>
@@ -74,13 +85,22 @@ export default function LiveWebPageViewer({ state }) {
           </div>
         </div>
 
+        {state.status ? <ViewerStatusBanner state={state} /> : null}
+
         <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-md border bg-slate-50 px-6 py-12 lg:min-h-[470px]">
-          {state.latestScreenshot ? (
-            <img
-              src={state.latestScreenshot}
-              alt="Latest automation screenshot"
-              className="max-h-[560px] w-full rounded-md border bg-white object-contain shadow-sm"
-            />
+          {hasScreenshot ? (
+            <div className="w-full">
+              <div className="mb-3 flex items-center justify-between gap-3 text-sm text-slate-600">
+                <span>Latest browser screenshot</span>
+                <span>{state.currentStep}</span>
+              </div>
+              <img
+                src={state.latestScreenshot}
+                alt="Latest automation screenshot"
+                className="max-h-[560px] w-full rounded-md border bg-white object-contain shadow-sm"
+                onError={() => setImageFailed(true)}
+              />
+            </div>
           ) : (
           <div className="max-w-md text-center">
             <div className="mx-auto mb-6 flex h-24 w-32 flex-col rounded-md border-2 border-blue-600 bg-white text-blue-600 shadow-sm">
@@ -98,12 +118,51 @@ export default function LiveWebPageViewer({ state }) {
               Live web page / browser view will appear here during automation execution.
             </p>
             <p className="mt-5 text-base leading-7 text-slate-600">
-              This area will display the real-time view of the internal IAS system once connected.
+              This area will display the latest safe screenshot from the internal IAS browser session.
             </p>
+            {imageFailed ? (
+              <p className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                Screenshot preview is not available yet.
+              </p>
+            ) : null}
           </div>
           )}
         </div>
       </CardContent>
     </Card>
   );
+}
+
+function ViewerStatusBanner({ state }) {
+  if (state.status === 'failed') {
+    return (
+      <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div>
+          <p className="font-semibold">Automation failed</p>
+          <p className="mt-1">{state.safeError || 'The login automation could not complete. Check the activity log and screenshot preview.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.status === 'completed') {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <CheckCircle2 className="h-4 w-4 shrink-0" />
+        <span className="font-semibold">Automation completed</span>
+      </div>
+    );
+  }
+
+  if (state.status === 'queued' || state.status === 'running') {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+        <span className="font-semibold">Automation in progress</span>
+      </div>
+    );
+  }
+
+  return null;
 }

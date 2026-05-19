@@ -1,4 +1,4 @@
-import { Check, ChevronsRight, Circle, Rocket } from 'lucide-react';
+import { AlertCircle, Check, ChevronsRight, Circle, Rocket } from 'lucide-react';
 
 import SectionTitle from '@/components/SectionTitle';
 import {
@@ -20,6 +20,12 @@ const stateStyles = {
     text: 'text-slate-950',
     time: 'text-blue-700'
   },
+  failed: {
+    icon: AlertCircle,
+    marker: 'bg-red-600 text-white',
+    text: 'text-red-700',
+    time: 'text-red-700'
+  },
   pending: {
     icon: Circle,
     marker: 'bg-slate-300 text-slate-300',
@@ -38,9 +44,12 @@ export default function JobLogs({ logs }) {
         Activity Log
       </SectionTitle>
       <CardContent className="p-4">
+        {logs.length === 0 ? (
+          <p className="text-sm text-slate-500">No activity yet.</p>
+        ) : (
         <ol className="space-y-2">
           {logs.map((log, index) => {
-            const style = stateStyles[log.state];
+            const style = stateStyles[log.state] || stateStyles.pending;
             const Icon = style.icon;
 
             return (
@@ -60,6 +69,7 @@ export default function JobLogs({ logs }) {
             );
           })}
         </ol>
+        )}
       </CardContent>
     </Card>
   );
