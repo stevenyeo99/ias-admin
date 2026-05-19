@@ -1,9 +1,5 @@
-async function runAutomation() {
-  return {
-    status: 'not_implemented'
-  };
-}
+const { runIasLoginAutomation } = require('./iasLoginAutomation');
 
 module.exports = {
-  runAutomation
+  runIasLoginAutomation
 };

@@ -280,7 +280,7 @@ Acceptance:
 
 ### Phase 2: Playwright Login Automation
 
-Status: Not started.
+Status: Complete.
 
 Goal: perform IAS login through backend Playwright.
 
