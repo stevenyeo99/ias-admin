@@ -259,6 +259,8 @@ ias-api/jobs/artifacts/{jobId}/
 
 ### Phase 1: Backend Job And Log Infrastructure
 
+Status: Complete.
+
 Goal: create the job lifecycle and realtime log channel.
 
 Work:
@@ -277,6 +279,8 @@ Acceptance:
 - No credentials are used yet.
 
 ### Phase 2: Playwright Login Automation
+
+Status: Not started.
 
 Goal: perform IAS login through backend Playwright.
 
@@ -298,6 +302,8 @@ Acceptance:
 
 ### Phase 3: Console Integration
 
+Status: Not started.
+
 Goal: connect the existing console UI to backend jobs.
 
 Work:
@@ -317,6 +323,8 @@ Acceptance:
 - Console remains usable before and after job execution.
 
 ### Phase 4: Live Preview Polish
+
+Status: Not started.
 
 Goal: improve the viewer without implementing complex browser streaming.
 
