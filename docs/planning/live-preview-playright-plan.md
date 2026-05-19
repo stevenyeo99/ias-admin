@@ -347,6 +347,30 @@ Acceptance:
 - `npm run build` succeeds for frontend.
 - Backend starts without syntax/runtime errors.
 
+### Phase 5: Near-Realtime Browser Preview
+
+Status: Complete.
+
+Goal: show browser automation progress visually using frequent screenshots.
+
+Work:
+
+- Add a controlled screenshot capture loop while Playwright automation is running.
+- Reuse the existing job artifact folder.
+- Emit preview frame updates through the existing SSE stream.
+- Update the frontend SSE hook to receive preview events.
+- Update the live viewer to prefer the latest streamed preview frame over slower polling state.
+- Stop preview capture when the job completes or fails.
+
+Acceptance:
+
+- The console viewer image updates repeatedly during automation.
+- Preview frames use existing backend static artifact paths.
+- Realtime logs continue to work.
+- No IAS credentials are exposed to the frontend.
+- `npm run build` succeeds for frontend.
+- Backend syntax checks pass.
+
 ## Explicit Non-Goals
 
 - No IAS credentials in React.

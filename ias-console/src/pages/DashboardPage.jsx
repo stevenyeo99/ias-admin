@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState(null);
   const { job, error: pollingError } = useJobPolling(activeJobId);
-  const { logs, connectionState, error: streamError } = useJobLogStream(activeJobId);
+  const { logs, preview, connectionState, error: streamError } = useJobLogStream(activeJobId);
   const isRunning = job ? RUNNING_STATUSES.has(job.status) : false;
 
   async function handleStartAutomation(input) {
@@ -42,11 +42,13 @@ export default function DashboardPage() {
   }
 
   const displayedLogs = useMemo(() => {
-    if (logs.length === 0) {
+    const visibleLogs = logs.filter((log) => log.type !== 'preview');
+
+    if (visibleLogs.length === 0) {
       return [];
     }
 
-    return mapBackendLogs(logs);
+    return mapBackendLogs(visibleLogs);
   }, [logs]);
 
   const displayedViewerState = useMemo(() => {
@@ -59,11 +61,11 @@ export default function DashboardPage() {
       browserStatus: formatBrowserStatus(job.browserStatus),
       currentStep: job.currentStep || 'Waiting',
       status: job.status,
-      latestScreenshot: job.latestScreenshot ? `${API_BASE_URL}${job.latestScreenshot}` : null,
+      latestScreenshot: resolveScreenshotUrl(preview?.url || job.latestScreenshot, preview?.timestamp || job.updatedAt),
       safeError: getSafeJobError(job),
       connectionState
     };
-  }, [job, connectionState]);
+  }, [job, connectionState, preview]);
 
   const displayedJobInfo = useMemo(() => {
     if (!job) {
@@ -226,6 +228,15 @@ function formatStatus(status) {
 
 function formatBrowserStatus(status) {
   return formatStatus(status || 'idle');
+}
+
+function resolveScreenshotUrl(path, cacheKey) {
+  if (!path) {
+    return null;
+  }
+
+  const separator = path.includes('?') ? '&' : '?';
+  return `${API_BASE_URL}${path}${cacheKey ? `${separator}t=${encodeURIComponent(cacheKey)}` : ''}`;
 }
 
 function formatTime(timestamp) {

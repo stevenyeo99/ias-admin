@@ -40,11 +40,13 @@ function subscribeToJobLogs(jobId, listener) {
 function appendJobLog(jobId, log) {
   const entry = jobLogStore.append(jobId, log);
 
-  logger.info(entry.message, {
-    jobId,
-    step: entry.step,
-    status: entry.status
-  });
+  if (entry.type !== 'preview') {
+    logger.info(entry.message, {
+      jobId,
+      step: entry.step,
+      status: entry.status
+    });
+  }
 
   return entry;
 }

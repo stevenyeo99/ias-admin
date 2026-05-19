@@ -49,6 +49,7 @@ async function runIasLoginAutomation({ jobId, emitLog, updateJob }) {
 async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
   let browser;
   let page;
+  let stopPreviewCapture = () => {};
 
   try {
     updateJob({
@@ -69,6 +70,13 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
       viewport: { width: 1366, height: 768 }
     });
     page = await context.newPage();
+    stopPreviewCapture = startPreviewCapture({
+      page,
+      jobId,
+      attempt,
+      emitLog,
+      updateJob
+    });
 
     updateJob({
       currentStep: 'Opening IAS login page',
@@ -86,7 +94,15 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
       timeout: DEFAULT_TIMEOUT
     });
     await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT }).catch(() => {});
-    await captureScreenshot({ page, jobId, name: `attempt-${attempt}-login-page`, updateJob });
+    await captureScreenshot({
+      page,
+      jobId,
+      name: `attempt-${attempt}-login-page`,
+      updateJob,
+      emitLog,
+      type: 'preview'
+    });
+    await pauseForPreview();
 
     updateJob({ currentStep: 'Entering username' });
     emitLog({
@@ -95,7 +111,16 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
       message: 'Entering username',
       status: 'running'
     });
-    await fillFirstAvailable(page, usernameSelectors(), process.env.IAS_USERNAME);
+    await fillFirstAvailable(page, usernameSelectors(), process.env.IAS_USERNAME, { typeSlowly: true });
+    await captureScreenshot({
+      page,
+      jobId,
+      name: `attempt-${attempt}-username-entered`,
+      updateJob,
+      emitLog,
+      type: 'preview'
+    });
+    await pauseForPreview();
 
     updateJob({ currentStep: 'Entering password' });
     emitLog({
@@ -104,7 +129,16 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
       message: 'Entering password',
       status: 'running'
     });
-    await fillFirstAvailable(page, passwordSelectors(), process.env.IAS_PASSWORD);
+    await fillFirstAvailable(page, passwordSelectors(), process.env.IAS_PASSWORD, { typeSlowly: true });
+    await captureScreenshot({
+      page,
+      jobId,
+      name: `attempt-${attempt}-password-entered`,
+      updateJob,
+      emitLog,
+      type: 'preview'
+    });
+    await pauseForPreview();
 
     updateJob({ currentStep: 'Submitting login form' });
     emitLog({
@@ -113,11 +147,19 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
       message: 'Submitting login form',
       status: 'running'
     });
+    await pauseForPreview();
     await submitLogin(page);
 
     await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT }).catch(() => {});
     await page.waitForTimeout(1500);
-    await captureScreenshot({ page, jobId, name: `attempt-${attempt}-after-submit`, updateJob });
+    await captureScreenshot({
+      page,
+      jobId,
+      name: `attempt-${attempt}-after-submit`,
+      updateJob,
+      emitLog,
+      type: 'preview'
+    });
 
     const success = await isLoginSuccessful(page);
 
@@ -142,11 +184,20 @@ async function runLoginAttempt({ jobId, attempt, emitLog, updateJob }) {
     };
   } catch (error) {
     if (page) {
-      await captureScreenshot({ page, jobId, name: `attempt-${attempt}-failure`, updateJob }).catch(() => {});
+      await captureScreenshot({
+        page,
+        jobId,
+        name: `attempt-${attempt}-failure`,
+        updateJob,
+        emitLog,
+        type: 'preview'
+      }).catch(() => {});
     }
 
     throw error;
   } finally {
+    stopPreviewCapture();
+
     if (browser) {
       await browser.close();
     }
@@ -184,18 +235,45 @@ function passwordSelectors() {
   ];
 }
 
-async function fillFirstAvailable(page, selectors, value) {
+async function fillFirstAvailable(page, selectors, value, options = {}) {
   for (const selector of selectors) {
     const locator = page.locator(selector).first();
 
     if (await locator.count()) {
       await locator.waitFor({ state: 'visible', timeout: 5000 });
-      await locator.fill(value);
+      await locator.fill('');
+
+      if (options.typeSlowly) {
+        await locator.pressSequentially(value, {
+          delay: getTypingDelay()
+        });
+      } else {
+        await locator.fill(value);
+      }
+
       return selector;
     }
   }
 
   throw new Error(`Unable to locate field for selectors: ${selectors.join(', ')}`);
+}
+
+function getStepDelay() {
+  return Number.parseInt(process.env.AUTOMATION_STEP_DELAY_MS || '750', 10);
+}
+
+function getTypingDelay() {
+  return Number.parseInt(process.env.AUTOMATION_TYPING_DELAY_MS || '80', 10);
+}
+
+async function pauseForPreview() {
+  const delay = getStepDelay();
+
+  if (delay > 0) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, delay);
+    });
+  }
 }
 
 async function submitLogin(page) {
@@ -230,7 +308,54 @@ async function isLoginSuccessful(page) {
   return passwordFields === 0;
 }
 
-async function captureScreenshot({ page, jobId, name, updateJob }) {
+function startPreviewCapture({ page, jobId, attempt, emitLog, updateJob }) {
+  const intervalMs = Number.parseInt(process.env.PREVIEW_CAPTURE_INTERVAL_MS || '1000', 10);
+  let stopped = false;
+  let isCapturing = false;
+  let frameNumber = 0;
+
+  const interval = setInterval(async () => {
+    if (stopped || isCapturing || page.isClosed()) {
+      return;
+    }
+
+    isCapturing = true;
+    frameNumber += 1;
+
+    try {
+      await captureScreenshot({
+        page,
+        jobId,
+        name: `attempt-${attempt}-preview`,
+        updateJob,
+        emitLog,
+        type: 'preview',
+        meta: {
+          frameNumber
+        }
+      });
+    } catch (error) {
+      emitLog({
+        level: 'error',
+        step: 'preview',
+        message: 'Preview frame capture failed',
+        status: 'running',
+        meta: {
+          reason: error.message
+        }
+      });
+    } finally {
+      isCapturing = false;
+    }
+  }, intervalMs);
+
+  return () => {
+    stopped = true;
+    clearInterval(interval);
+  };
+}
+
+async function captureScreenshot({ page, jobId, name, updateJob, emitLog, type, meta }) {
   const jobArtifactsDir = path.join(ARTIFACTS_ROOT, jobId);
   await fs.mkdir(jobArtifactsDir, { recursive: true });
 
@@ -246,6 +371,20 @@ async function captureScreenshot({ page, jobId, name, updateJob }) {
   updateJob({
     latestScreenshot: publicPath
   });
+
+  if (emitLog) {
+    emitLog({
+      level: 'info',
+      step: 'preview',
+      message: 'Browser preview updated',
+      status: 'running',
+      type,
+      preview: {
+        url: publicPath
+      },
+      meta
+    });
+  }
 
   return publicPath;
 }

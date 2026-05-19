@@ -73,11 +73,19 @@ async function streamJobLogs(req, res, next) {
 
     const existingLogs = await jobService.listJobLogs(req.params.jobId);
     existingLogs.forEach((log) => {
-      sendEvent('log', log);
+      if (log.type === 'preview') {
+        sendEvent('preview', log);
+      } else {
+        sendEvent('log', log);
+      }
     });
 
     const unsubscribe = jobService.subscribeToJobLogs(req.params.jobId, (log) => {
-      sendEvent('log', log);
+      if (log.type === 'preview') {
+        sendEvent('preview', log);
+      } else {
+        sendEvent('log', log);
+      }
     });
 
     const heartbeat = setInterval(() => {
